@@ -1,0 +1,61 @@
+---
+- name: Installa pgpool2 e le dipendenze
+  apt:
+    name:
+      - pgpool2
+      - postgresql-14-pgpool2
+      - net-tools
+      - arping
+    state: present
+
+- name: Abilita il servizio pgpool2
+  systemd:
+    name: pgpool2.service
+    enabled: yes
+
+- name: Ferma il servizio pgpool2
+  systemd:
+    name: pgpool2.service
+    state: stopped
+
+- name: Update home directory for postgres user
+  command:
+    cmd: usermod -d /postgresql postgres
+  become: yes
+
+- name: Crea il servizio postgresql-14
+  copy:
+    content: |
+      [Unit]
+      Description=PostgreSQL 14 Cluster
+      After=syslog.target
+      After=network.target backups.mount
+
+      [Service]
+      User=postgres
+      Group=postgres
+      Type=notify
+      Environment=PGDATA=/postgresql/pg_data
+      # Disable OOM kill on the postmaster
+      OOMScoreAdjust=-1000
+      Environment=PG_OOM_ADJUST_FILE=/proc/self/oom_score_adj
+      Environment=PG_OOM_ADJUST_VALUE=0
+      #ExecStartPre=/usr/lib/postgresql/12/bin/postgresql-12-check-db-dir ${PGDATA}
+      ExecStart=/usr/lib/postgresql/14/bin/postmaster -D ${PGDATA}
+      ExecReload=/bin/kill -HUP $MAINPID
+      KillMode=mixed
+      KillSignal=SIGINT
+      SyslogFacility=local0
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /lib/systemd/system/postgresql-14.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ricarica systemd per riconoscere il nuovo servizio
+  command:
+    cmd: systemctl daemon-reload
+  become: yes
+

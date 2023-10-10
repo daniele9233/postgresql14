@@ -1,0 +1,24 @@
+- name: Install and configure Cluster Postgresql14 on nodes
+  hosts: masters 
+  become: yes
+  gather_facts: yes 
+
+  roles:
+    
+    - role: postgresql_install
+    
+    - role: ssh_key_install
+
+    - role: pgpool2_install
+
+    - role: scambio_chiavi_ssh
+
+    - role: pg_hba
+
+- name: Run initdb_install on node1
+  hosts: master1.isc-lab.giottolabs.com
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - role: initdb_install

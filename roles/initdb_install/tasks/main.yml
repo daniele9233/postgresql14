@@ -1,0 +1,71 @@
+---
+- name: Reload systemd manager configuration
+  systemd:
+    daemon_reload: yes
+
+- name: Enable postgresql-14 service
+  systemd:
+    name: postgresql-14.service
+    enabled: yes
+
+- name: Initialize the Postgresql-14 database
+  become: yes
+  become_user: postgres
+  command: /usr/lib/postgresql/14/bin/initdb -D /postgresql/pg_data/
+
+- name: Start postgresql-14 service
+  systemd:
+    name: postgresql-14.service
+    state: started
+
+- name: Replace content of /postgresql/pg_data/postgresql.conf
+  copy:
+    dest: "/postgresql/pg_data/postgresql.conf"
+    content: |
+      external_pid_file = '/var/run/postgresql'                       # write an extra PID file
+      listen_addresses = '*'          # what IP address(es) to listen on;
+      port = 5433
+      unix_socket_directories = '/var/run/postgresql' # comma-separated list of directories
+      password_encryption = md5       # scram-sha-256 or md5
+      dynamic_shared_memory_type = posix      # the default is the first option
+      wal_level = hot_standby                 # minimal, replica, or logical
+      wal_log_hints = on                      # also do full page writes of non-critical updates
+      archive_mode = on               # enables archiving; off, on, or always
+      archive_command = 'cp "%p" "/postgresql/archive/%f"'
+      max_wal_senders = 10            # max number of walsender processes
+      hot_standby = on                        # "off" disallows queries during recovery
+      default_statistics_target = 50  # range 1-10000
+      log_destination = 'syslog'              # Valid values are combinations of       logging_collector = on          # Enable capturing of stderr and csvlog
+      log_directory = '/var/log/postgresql'                   # directory where log files are written,
+      log_filename = 'postgresql.log' # log file name pattern,
+      log_file_mode = 0600                    # creation mode for log files,
+      log_rotation_age = 1d                   # log_truncate_on_rotation = on           # If on, an existing log file with the
+      syslog_facility = 'LOCAL0'
+      syslog_ident = 'postgres'
+      log_timezone = 'Europe/Rome'
+      datestyle = 'iso, mdy'
+      timezone = 'Europe/Rome'
+      lc_messages = 'C.UTF-8'                 # locale for system error message        lc_monetary = 'C.UTF-8'                 # locale for monetary formatting
+      lc_numeric = 'C.UTF-8'                  # locale for number formatting
+      lc_time = 'C.UTF-8'                             # locale for time formatting
+      default_text_search_config = 'pg_catalog.english'
+      max_connections = 200
+      shared_buffers = 3840MB
+      effective_cache_size = 11520MB
+      maintenance_work_mem = 960MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 300
+      work_mem = 9830kB
+      huge_pages = off
+      min_wal_size = 1GB
+      max_wal_size = 4GB
+      max_worker_processes = 4
+      max_parallel_workers_per_gather = 2
+      max_parallel_workers = 4
+      max_parallel_maintenance_workers = 2
+      include_if_exists = '/postgresql/pg_data/myrecovery.conf'
+
+

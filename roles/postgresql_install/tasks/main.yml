@@ -1,0 +1,88 @@
+---
+- name: Aggiorna il repository del sistema
+  apt:
+    update_cache: yes
+
+- name: Effettua l'upgrade dei pacchetti
+  apt:
+    upgrade: yes
+
+- name: Rimuovi i pacchetti non necessari
+  apt:
+    autoremove: yes
+
+- name: Installa bash-completion
+  apt:
+    name: bash-com*
+    state: present
+
+- name: Aggiungi repository Postgresql
+  copy:
+    content: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_lsb.codename }}-pgdg main"
+    dest: /etc/apt/sources.list.d/pgdg.list
+
+- name: Importa chiave GPG di Postgresql
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Aggiorna il repository dopo aver aggiunto il repository Postgresql
+  apt:
+    update_cache: yes
+
+- name: Installa Postgresql 14
+  apt:
+    name: postgresql-14
+    state: present
+
+- name: Disabilita il servizio postgresql
+  systemd:
+    name: postgresql.service
+    enabled: no
+
+- name: Disabilita il servizio postgresql@14-main
+  systemd:
+    name: postgresql@14-main.service
+    enabled: no
+
+- name: Ferma il servizio postgresql-14
+  systemd:
+    name: postgresql@14-main.service
+    state: stopped
+
+# home_directory/tasks/main.yml
+
+- name: Remove /var/lib/postgresql/14 directory
+  file:
+    path: /var/lib/postgresql/14
+    state: absent
+
+- name: Remove /etc/postgresql/14 directory
+  file:
+    path: /etc/postgresql/14
+    state: absent
+
+- name: Create /postgresql directory
+  file:
+    path: /postgresql
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0755'
+
+- name: Create /postgresql directory
+  file:
+    path: /postgresql/pg_data
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0755'
+
+- name: Create /postgresql directory
+  file:
+    path: /postgresql/archive
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0755'
+

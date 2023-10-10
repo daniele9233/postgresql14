@@ -1,0 +1,34 @@
+---
+# tasks/main.yml per ssh_key_install
+
+- name: Create /postgresql directory
+  file:
+    path: /postgresql
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0755'
+
+- name: Create /postgresql/.ssh directory
+  file:
+    path: /postgresql/.ssh
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Generate SSH keys on master1
+  command:
+    cmd: ssh-keygen -t rsa -f /postgresql/.ssh/id_rsa -N ""
+  when: "'10.116.82.131' in ansible_host"
+  become: yes
+  become_user: postgres
+  args:
+    creates: /postgresql/.ssh/id_rsa
+
+- name: Ensure SSH public key is available
+  fetch:
+    src: /postgresql/.ssh/id_rsa.pub
+    dest: "/tmp/id_rsa.pub"
+    flat: yes
+  when: "'10.116.82.131' in ansible_host"
